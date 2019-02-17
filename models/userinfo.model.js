@@ -86,77 +86,84 @@ const getAllDocuments = (collection) => {
             })
     });
 };
-
-// add user
-module.exports.userinfoadd = (req, res) => {
-    const checkUser = (user) => {
-        return new Promise(function (resolve, reject) {
-            const User = mongoose.model("user", schema.UserSchema);
-            User.findOne({firstname: user.firstname, lastname: user.lastname}).exec()
-                .then(docs => {
-                    if (docs && docs.id) {
-                        resolve(true);
-                    } else {
-                        resolve(false);
-                    }
-                })
-                .catch((err) => {
-                    console.error("Error ", err);
-
-                })
-        });
-    };
-    const addUser = (idAddress) => {
+const checkUser = (user) => {
+    return new Promise(function (resolve, reject) {
+        const User = mongoose.model("user", schema.UserSchema);
+        User.findOne({firstname: user.firstname, lastname: user.lastname})
+            .then(docs => {
+                if (docs && docs.id) {
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            })
+            .catch((err) => {
+                console.error("Error ", err);
+                reject(false)
+            })
+    });
+};
+const getAddressId = (idCountry, idCity, idStreet) => {
+    return new Promise((resolve, reject) => {
+        const Address = mongoose.model('address', schema.addressSchema);
+        Address.findOne({
+            country_id: idCountry,
+            city_id: idCity,
+            street_id: idStreet
+        })
+            .then(docs => {
+                if (docs && docs.id) {
+                    resolve(docs.id);
+                } else {
+                    resolve(false);
+                }
+            })
+            .catch((err) => {
+                console.error("Error ", err);
+            })
+    });
+};
+const addUser = (req, idAddress) => {
+    return new Promise((resolve, reject) => {
         const User = mongoose.model('user', schema.UserSchema);
         const user = new User({
             firstname: req.body.firstname,
             lastname: req.body.lastname,
             address_id: idAddress
         });
-        user.save((err) => {
-            if (err) return console.log(err);
-            res.status(201).send('User ' + req.body.firstname + ' ' + req.body.lastname + ' was created.');
-        });
-    };
-    const getAddressId = (idCountry, idCity, idStreet) => {
-        return new Promise((resolve, reject) => {
-            const Address = mongoose.model('address', schema.addressSchema);
-            Address.findOne({
-                country_id: idCountry,
-                city_id: idCity,
-                street_id: idStreet
-            }).exec()
-                .then(docs => {
-                    if (docs && docs.id) {
-                        resolve(docs.id);
-                    } else {
-                        resolve(false);
-                    }
-                })
-                .catch((err) => {
-                    console.error("Error ", err);
-                })
-        });
-    };
-
-    const getIdCountry = getPlace("country", req.body.country);
-    const getIdCity = getPlace("city", req.body.city);
-    const getIdStreet = getPlace("street", req.body.street);
-    const isUser = checkUser(req.body);
-    Promise.all([getIdCountry, getIdCity, getIdStreet, isUser]).then(results => {
-        if (!results[3]) {
-            getAddressId(results[0], results[1], results[2])
-                .then((idAddress) => {
-                    if (idAddress) {
-                        addUser(idAddress);
-                    } else {
-                        res.status(406).send('Address country city street doesn\'t exist.');
-                    }
-                })
-        } else {
-            res.status(204).send('User firstname lastname already exists.');
-        }
+        user.save()
+            .then(data => resolve(data))
+            .catch(err => reject(err.errors.id))
     });
+};
+
+// add user
+module.exports.userinfoadd = (req) => {
+    return new Promise((resolve, reject) => {
+        const getIdCountry = getPlace("country", req.body.country);
+        const getIdCity = getPlace("city", req.body.city);
+        const getIdStreet = getPlace("street", req.body.street);
+        const isUser = checkUser(req.body);
+        Promise.all([getIdCountry, getIdCity, getIdStreet, isUser])
+            .then(results => {
+                if (!results[3]) {
+                    getAddressId(results[0], results[1], results[2])
+                        .then((idAddress) => {
+                            if (idAddress) {
+                                addUser(req, idAddress)
+                                    .then(data => resolve(data))
+                                    .catch(err => reject(err))
+                            } else {
+                                reject("Address country city street doesn\'t exist.")
+                            }
+                        })
+                        .catch(err => reject(err))
+                } else {
+                    reject("User already exist")
+                }
+            })
+            .catch( err => reject("Error in Promise.all"));
+    })
 };
 
 
