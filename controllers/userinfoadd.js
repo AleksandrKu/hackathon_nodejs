@@ -16,13 +16,14 @@ module.exports.userinfoadd = function (req, res, next) {
     }
 };
 
-module.exports.userinfoaddaddress = function (req, res, next) {
-    let message = '';
+
+module.exports.userinfoaddaddress = (req, res, next) =>  {
     if (req.body.collection && ~collections.indexOf(req.body.collection)) {
-        message = 'Success add to collection ' + req.body.collection;
-        userinfoaddaddress(req.body);
+        const result = userinfoaddaddress(req.body);
+        result
+            .then (data => res.status(200).send('Success add to collection ' + data.name))
+            .catch(err =>  res.status(406).send(err))
     } else {
-        message = "No such collection. Don\'t add to database!"
+        res.status(406).send('"' + req.body.collection + '" collection is not in database. Did not add in database!');
     }
-    res.render('index', {title: message});
 };

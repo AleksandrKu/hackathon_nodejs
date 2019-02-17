@@ -189,19 +189,20 @@ module.exports.userinfoget = (req, res) => {
 
 }
 
+
 // add 'country', 'city', 'street' collection
 module.exports.userinfoaddaddress = (body) => {
-    const schemaName = body.collection + 'Schema';
-    const Address = mongoose.model(body.collection, schema[schemaName]);
-    const address = new Address({
-        id: body.id,
-        name: body.name
+    return new Promise((resolve, reject) => {
+        const schemaName = body.collection + 'Schema';
+        const Address = mongoose.model(body.collection, schema[schemaName]);
+        const address = new Address({
+            id: body.id,
+            name: body.name
+        });
+       address.save()
+            .then(data => resolve(data))
+            .catch(err => reject(err.errors.id))
     });
-    address.save(function (err) {
-        if (err) return console.log(err);
-        console.log("Сохранен объект", address);
-    });
-    return true;
 };
 
 module.exports.getAllCollection = () => {
