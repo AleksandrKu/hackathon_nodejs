@@ -72,7 +72,8 @@ const getAllDocuments = (collection) => {
         } else {
             Name = mongoose.model(collection, schema[collection + "Schema"]);
         }
-        Name.find().exec()
+        Name.find()
+            .select({ _id: 0, __v:0 })
             .then(docs => {
                 if (docs) {
                     resolve(docs);
@@ -210,9 +211,10 @@ module.exports.getAllCollection = () => {
         const getCountry = getAllDocuments("country");
         const getCity = getAllDocuments("city");
         const getStreet = getAllDocuments("street");
-        Promise.all([getUser, getAddress, getCountry, getCity, getStreet]).then(data => {
-            resolve(data);
-        });
+        Promise.all([getUser, getAddress, getCountry, getCity, getStreet])
+            .then(data => {
+                resolve(data);
+            });
     });
 
 }
