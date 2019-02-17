@@ -166,11 +166,10 @@ module.exports.userinfoadd = (req) => {
     })
 };
 
-
-module.exports.userinfoget = (req, res) => {
+module.exports.userinfoget = (req) => {
     return new Promise(function (resolve, reject) {
         const User = mongoose.model("user", schema.UserSchema);
-        User.findOne({firstname: req.params[0], lastname: req.params[1]}).exec()
+        User.findOne({firstname: req.params[0], lastname: req.params[1]})
             .then(docs => {
                 if (docs && docs.id && docs.address_id) {
                     getAddress(docs.address_id)
@@ -179,18 +178,17 @@ module.exports.userinfoget = (req, res) => {
                             const getCity = getPlaceName("city", address.city_id);
                             const getStreet = getPlaceName("street", address.street_id);
                             Promise.all([getCountry, getCity, getStreet]).then(addresses => {
-                                res.status(200).send('firstname: ' + req.params[0] + ' lastname: ' + req.params[1] + ' ' +
-                                    'country: ' + addresses[0] + ', city: ' + addresses[1] + ', street: ' + addresses[2]);
+                             resolve(addresses);
                             });
                         })
                 } else {
-                    console.log('User ' + req.params[0] + ' ' + req.params[1] + ' doesn\'t exist.');
-                    res.status(204).send('User ' + req.params[0] + ' ' + req.params[1] + ' doesn\'t exist.');
-                    resolve(false);
+                    const message = 'User ' + req.params[0] + ' ' + req.params[1] + ' doesn\'t exist.'
+                    reject(message);
                 }
             })
             .catch((err) => {
                 console.error("Error ", err);
+                reject(err)
             })
     });
 
